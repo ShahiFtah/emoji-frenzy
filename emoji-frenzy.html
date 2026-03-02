@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emoji Frenzy! 🎉</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0c29;
+    --accent: #ff6b6b;
+    --green: #51cf66;
+    --yellow: #ffd43b;
+    --purple: #cc5de8;
+    --blue: #339af0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: white;
+  }
+
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .star {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 2s infinite alternate;
+  }
+
+  @keyframes twinkle { from { opacity: 0.2; } to { opacity: 1; } }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 700px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    background: linear-gradient(90deg, #ffd43b, #ff6b6b, #cc5de8, #339af0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 20px rgba(255,107,107,0.4));
+    animation: titlePulse 3s ease-in-out infinite;
+  }
+
+  @keyframes titlePulse {
+    0%,100% { filter: drop-shadow(0 0 20px rgba(255,107,107,0.4)); }
+    50% { filter: drop-shadow(0 0 40px rgba(204,93,232,0.6)); }
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 24px;
+  }
+
+  /* HUD */
+  .hud {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .hud-box {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 12px 24px;
+    min-width: 110px;
+  }
+
+  .hud-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 4px;
+  }
+
+  .hud-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  #score-val { color: var(--yellow); }
+  #timer-val { color: var(--accent); }
+  #best-val { color: var(--green); }
+
+  /* Target emoji display */
+  .target-area {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .target-label {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+    white-space: nowrap;
+  }
+
+  .target-emoji {
+    font-size: 3rem;
+    animation: bounceTarget 0.5s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 12px rgba(255,215,0,0.6));
+  }
+
+  @keyframes bounceTarget {
+    from { transform: scale(1) rotate(-5deg); }
+    to { transform: scale(1.15) rotate(5deg); }
+  }
+
+  /* Game grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .emoji-btn {
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 12px 6px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.1s, border-color 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .emoji-btn:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+    transform: scale(1.08);
+  }
+
+  .emoji-btn:active { transform: scale(0.92); }
+
+  .emoji-btn.correct {
+    background: rgba(81,207,102,0.3);
+    border-color: var(--green);
+    animation: correctFlash 0.3s ease;
+  }
+
+  .emoji-btn.wrong {
+    background: rgba(255,107,107,0.3);
+    border-color: var(--accent);
+    animation: wrongShake 0.3s ease;
+  }
+
+  @keyframes correctFlash {
+    0% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes wrongShake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* Timer bar */
+  .timer-bar-wrap {
+    background: rgba(255,255,255,0.1);
+    border-radius: 50px;
+    height: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .timer-bar {
+    height: 100%;
+    border-radius: 50px;
+    background: linear-gradient(90deg, var(--green), var(--yellow), var(--accent));
+    transition: width 0.1s linear;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    padding: 14px 48px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 1px;
+  }
+
+  .btn:hover { transform: translateY(-3px); }
+  .btn:active { transform: translateY(0); }
+
+  .btn-start {
+    background: linear-gradient(135deg, #ffd43b, #ff6b6b);
+    color: white;
+    box-shadow: 0 8px 30px rgba(255,107,107,0.4);
+  }
+
+  /* Screens */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Start screen */
+  #start-screen .big-emoji {
+    font-size: 5rem;
+    margin-bottom: 16px;
+    animation: float 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes float {
+    from { transform: translateY(0) rotate(-5deg); }
+    to { transform: translateY(-15px) rotate(5deg); }
+  }
+
+  #start-screen h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 12px;
+  }
+
+  #start-screen p {
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 28px;
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  /* End screen */
+  #end-screen .big-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 5rem;
+    color: var(--yellow);
+    filter: drop-shadow(0 0 20px rgba(255,212,59,0.5));
+    animation: scorePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes scorePop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  #end-screen h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  #end-screen p {
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 24px;
+    font-size: 1.1rem;
+  }
+
+  .new-record {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd43b, #ff6b6b);
+    color: white;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    padding: 6px 20px;
+    border-radius: 50px;
+    margin-bottom: 16px;
+    animation: recordPulse 0.5s ease infinite alternate;
+  }
+
+  @keyframes recordPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+  }
+
+  /* Floating score popup */
+  .score-popup {
+    position: fixed;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: var(--yellow);
+    pointer-events: none;
+    z-index: 999;
+    animation: floatUp 0.8s ease forwards;
+  }
+
+  @keyframes floatUp {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-80px); opacity: 0; }
+  }
+
+  /* Difficulty */
+  .diff-selector {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .diff-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    padding: 8px 20px;
+    border-radius: 50px;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.07);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .diff-btn.selected, .diff-btn:hover {
+    border-color: var(--yellow);
+    background: rgba(255,212,59,0.15);
+    color: var(--yellow);
+  }
+
+  .level-badge {
+    display: inline-block;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    padding: 4px 14px;
+    border-radius: 50px;
+    margin-bottom: 16px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7);
+  }
+
+  .combo-display {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: var(--purple);
+    margin-bottom: 8px;
+    transition: opacity 0.3s;
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+
+  <!-- START SCREEN -->
+  <div id="start-screen" class="screen active">
+    <h1>Emoji Frenzy!</h1>
+    <p class="subtitle">Trykk riktig emoji — så fort du kan!</p>
+    <div class="big-emoji">🎯</div>
+    <h2>Klar til å spille?</h2>
+    <p>Finn og trykk på riktig emoji blant mange andre.<br>Samle poeng og slå rekorden din!</p>
+
+    <div class="diff-selector">
+      <button class="diff-btn selected" data-diff="easy">😊 Lett</button>
+      <button class="diff-btn" data-diff="medium">😤 Medium</button>
+      <button class="diff-btn" data-diff="hard">🔥 Vanskelig</button>
+    </div>
+
+    <button class="btn btn-start" onclick="startGame()">START! 🚀</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen" class="screen">
+    <div class="hud">
+      <div class="hud-box">
+        <div class="hud-label">Poeng</div>
+        <div class="hud-value" id="score-val">0</div>
+      </div>
+      <div class="hud-box">
+        <div class="hud-label">Tid</div>
+        <div class="hud-value" id="timer-val">30</div>
+      </div>
+      <div class="hud-box">
+        <div class="hud-label">Rekord</div>
+        <div class="hud-value" id="best-val">0</div>
+      </div>
+    </div>
+
+    <div class="timer-bar-wrap">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+
+    <div class="combo-display" id="combo-display"></div>
+
+    <div class="target-area">
+      <span class="target-label">👉 Finn denne:</span>
+      <span class="target-emoji" id="target-emoji">🎯</span>
+    </div>
+
+    <div class="grid" id="emoji-grid"></div>
+    <div class="level-badge" id="level-badge">Nivå 1</div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="end-screen" class="screen">
+    <h1>Emoji Frenzy!</h1>
+    <div id="end-icon" style="font-size:4rem;margin-bottom:12px;">🎉</div>
+    <h2 id="end-title">Bra jobbet!</h2>
+    <div class="big-score" id="final-score">0</div>
+    <p id="end-msg">poeng denne runden</p>
+    <div id="record-badge" class="new-record" style="display:none">🏆 Ny Rekord!</div>
+    <br>
+    <button class="btn btn-start" onclick="showStart()">Spill igjen! 🔄</button>
+  </div>
+
+</div>
+
+<script>
+// === CONFIG ===
+const EMOJIS = [
+  '🍕','🍔','🍟','🌮','🍦','🎂','🍩','🍪','🎃','🎄',
+  '🦁','🐸','🐶','🐱','🦊','🐼','🐨','🦋','🐙','🦄',
+  '⚽','🏀','🎾','🎯','🎮','🎲','🎸','🎺','🚀','✈️',
+  '🌈','⭐','🔥','💎','🌸','🌻','🍀','🌙','☀️','❄️',
+  '🎈','🎉','🎁','🎀','🏆','🥇','💡','🔮','🎭','🎨'
+];
+
+const DIFFICULTIES = {
+  easy:   { gridSize: 10, time: 40, points: 10, label: 'Lett' },
+  medium: { gridSize: 15, time: 30, points: 15, label: 'Medium' },
+  hard:   { gridSize: 20, time: 25, points: 20, label: 'Vanskelig' }
+};
+
+// === STATE ===
+let score = 0, timeLeft = 30, timerInterval = null;
+let target = '', currentDiff = 'easy', bestScore = 0;
+let combo = 0, maxTime = 30;
+
+// Stars bg
+(function() {
+  const s = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const d = document.createElement('div');
+    d.className = 'star';
+    d.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;
+      animation-delay:${Math.random()*3}s;animation-duration:${1+Math.random()*2}s;
+      width:${1+Math.random()*3}px;height:${1+Math.random()*3}px;opacity:${Math.random()}`;
+    s.appendChild(d);
+  }
+})();
+
+// Difficulty selector
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentDiff = btn.dataset.diff;
+  });
+});
+
+function startGame() {
+  const cfg = DIFFICULTIES[currentDiff];
+  score = 0; combo = 0;
+  timeLeft = cfg.time; maxTime = cfg.time;
+  bestScore = parseInt(localStorage.getItem('emojiBest_'+currentDiff) || 0);
+
+  showScreen('game-screen');
+  document.getElementById('best-val').textContent = bestScore;
+  document.getElementById('level-badge').textContent = `${cfg.label} • ${cfg.gridSize} emojier`;
+  updateHUD();
+  generateRound();
+
+  timerInterval = setInterval(() => {
+    timeLeft -= 0.1;
+    if (timeLeft <= 0) { timeLeft = 0; endGame(); }
+    updateHUD();
+  }, 100);
+}
+
+function updateHUD() {
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('timer-val').textContent = Math.ceil(timeLeft);
+  document.getElementById('timer-bar').style.width = (timeLeft / maxTime * 100) + '%';
+}
+
+function generateRound() {
+  const cfg = DIFFICULTIES[currentDiff];
+  const shuffled = [...EMOJIS].sort(() => Math.random() - 0.5);
+  const pool = shuffled.slice(0, cfg.gridSize);
+
+  // Ensure target is in pool
+  const targetIdx = Math.floor(Math.random() * cfg.gridSize);
+  target = pool[targetIdx];
+
+  // Shuffle grid
+  const gridEmojis = [...pool].sort(() => Math.random() - 0.5);
+
+  document.getElementById('target-emoji').textContent = target;
+
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = '';
+
+  // Adjust columns
+  const cols = cfg.gridSize <= 10 ? 5 : cfg.gridSize <= 15 ? 5 : 5;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+  gridEmojis.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.className = 'emoji-btn';
+    btn.textContent = emoji;
+    btn.addEventListener('click', (e) => handleClick(e, btn, emoji));
+    grid.appendChild(btn);
+  });
+}
+
+function handleClick(e, btn, emoji) {
+  const cfg = DIFFICULTIES[currentDiff];
+  if (emoji === target) {
+    btn.classList.add('correct');
+    combo++;
+    const comboBonus = combo >= 3 ? Math.floor(combo * 0.5) : 0;
+    const earned = cfg.points + comboBonus;
+    score += earned;
+
+    showCombo(combo);
+    showPopup(e, '+' + earned);
+
+    // Brief flash then next round
+    setTimeout(() => generateRound(), 250);
+  } else {
+    btn.classList.add('wrong');
+    combo = 0;
+    document.getElementById('combo-display').textContent = '';
+    timeLeft = Math.max(0, timeLeft - 2);
+    btn.disabled = true;
+    setTimeout(() => { btn.classList.remove('wrong'); btn.disabled = false; }, 400);
+  }
+}
+
+function showCombo(c) {
+  const el = document.getElementById('combo-display');
+  if (c >= 3) {
+    const msgs = ['','','','🔥 COMBO x3!','💥 COMBO x4!','⚡ COMBO x5!','🌟 COMBO x6!','🚀 SUPER COMBO!'];
+    el.textContent = msgs[Math.min(c, msgs.length-1)] || `🔥 COMBO x${c}!`;
+  } else {
+    el.textContent = '';
+  }
+}
+
+function showPopup(e, text) {
+  const popup = document.createElement('div');
+  popup.className = 'score-popup';
+  popup.textContent = text;
+  const rect = e.target.getBoundingClientRect();
+  popup.style.left = rect.left + rect.width/2 - 30 + 'px';
+  popup.style.top = rect.top - 10 + 'px';
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 800);
+}
+
+function endGame() {
+  clearInterval(timerInterval);
+  const isRecord = score > bestScore;
+  if (isRecord) {
+    bestScore = score;
+    localStorage.setItem('emojiBest_'+currentDiff, bestScore);
+  }
+
+  const cfg = DIFFICULTIES[currentDiff];
+  const titles = score < 50 ? ['Ikke verst! 😅', 'Prøv igjen! 💪'] :
+                 score < 150 ? ['Bra jobbet! 🎉', 'Du er flink! 😄'] :
+                               ['FANTASTISK! 🔥', 'Du er en legende! 🏆'];
+
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('end-title').textContent = titles[0];
+  document.getElementById('end-msg').textContent = `poeng på ${cfg.label} vanskelighetsgrad`;
+  document.getElementById('record-badge').style.display = isRecord ? 'inline-block' : 'none';
+  document.getElementById('end-icon').textContent = score >= 150 ? '🏆' : score >= 50 ? '🎉' : '😅';
+
+  showScreen('end-screen');
+}
+
+function showStart() {
+  showScreen('start-screen');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
